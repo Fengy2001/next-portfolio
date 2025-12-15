@@ -212,7 +212,7 @@ export default function AsciiOrbitsScene({
         <OrbitControls
           target={[0, 0, 0]} 
           enablePan={false}
-          enableZoom={true}
+          enableZoom={false}
           enableRotate={true}
           minAzimuthAngle={2*Math.PI/64}
           maxAzimuthAngle={7*Math.PI/64}
