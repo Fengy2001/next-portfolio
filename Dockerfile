@@ -31,9 +31,6 @@ ENV PORT=4200
 RUN groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs nextjs
 
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
 COPY --from=deps /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 
 RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
