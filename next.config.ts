@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import { output } from "three/tsl";
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // output: "standalone",
   webpack: (config) => {
     config.module.rules.push({
       test: /\.(glsl|vs|fs|vert|frag)$/,

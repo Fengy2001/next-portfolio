@@ -1,9 +1,16 @@
 # ---- Stage 1: install dependencies ----
 FROM node:20-slim AS deps
 WORKDIR /app
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts
+
+# better-sqlite3 ships prebuilt binaries for common platforms — rather than
+# relying on node-gyp to compile from source (which was failing/stale in
+# this environment), copy the matching prebuild directly into the path
+# better-sqlite3's loader expects at runtime.
+RUN mkdir -p node_modules/better-sqlite3/build/Release \
+  && cp node_modules/better-sqlite3/prebuilds/linux-x64.node \
+        node_modules/better-sqlite3/build/Release/better_sqlite3.node
 
 # ---- Stage 2: build the app ----
 FROM node:20-slim AS builder
@@ -35,4 +42,4 @@ USER nextjs
 
 EXPOSE 4200
 
-CMD ["node", "server.js"]
+CMD ["npm", "run", "start"]
