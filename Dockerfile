@@ -23,19 +23,18 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4200
 
-# run as a non-root user — standard container hardening practice
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
-# standalone output already contains a minimal node_modules subset,
-# server.js, and everything needed to run — no need to copy the full
-# node_modules or source tree into the final image
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 
-# ensure the data directory exists and is writable by the non-root user
-# before the volume is mounted over it
+# Next's file tracer often fails to correctly copy native (.node) binaries
+# for packages like better-sqlite3 into the standalone output — explicitly
+# overwrite it with the real, fully-compiled package from the deps stage.
+COPY --from=deps /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
+
 RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
 
 USER nextjs
