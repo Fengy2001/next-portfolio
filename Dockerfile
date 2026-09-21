@@ -1,35 +1,28 @@
 # ---- Stage 1: install dependencies ----
-FROM node:20-alpine AS deps
+FROM node:20-slim AS deps
 WORKDIR /app
-RUN apk add --no-cache python3 make g++
+RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
 RUN npm ci
 
 # ---- Stage 2: build the app ----
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# SESSION_SECRET only needs to exist at build time if any code path reads it
-# during the build itself (e.g. static generation). A placeholder is safe
-# here since the real value is injected at container runtime, not baked in.
 ENV SESSION_SECRET=build-time-placeholder
+ENV NODE_OPTIONS=--max-old-space-size=2048
 RUN npm run build
 
 # ---- Stage 3: minimal production runtime ----
-FROM node:20-alpine AS runner
+FROM node:20-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=4200
 
-# libstdc++ is needed at runtime by native addons (like better-sqlite3)
-# that were compiled with g++ in the deps stage — the build tools
-# themselves aren't needed here, just this one shared runtime library
-RUN apk add --no-cache libstdc++
-
-RUN addgroup --system --gid 1001 nodejs \
-  && adduser --system --uid 1001 nextjs
+RUN groupadd --system --gid 1001 nodejs \
+  && useradd --system --uid 1001 --gid nodejs nextjs
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
