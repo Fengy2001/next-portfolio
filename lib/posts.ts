@@ -1,4 +1,4 @@
-import { db } from './db';
+import { getDb } from './db';
 
 export type Category = 'projects' | 'standard';
 
@@ -44,18 +44,18 @@ function rowToPost(row: any): BlogPost {
 }
 
 export function getAllPosts(): BlogPost[] {
-  const rows = db.prepare('SELECT * FROM posts ORDER BY date DESC').all();
+  const rows = getDb().prepare('SELECT * FROM posts ORDER BY date DESC').all() as any[];
   return rows.map(rowToPost);
 }
 
 export function getPostBySlug(slug: string): BlogPost | null {
-  const row = db.prepare('SELECT * FROM posts WHERE slug = ?').get(slug);
-  return row ? rowToPost(row as any) : null;
+  const row = getDb().prepare('SELECT * FROM posts WHERE slug = ?').get(slug) as any;
+  return row ? rowToPost(row) : null;
 }
 
 export function getFeaturedProjects(): ProjectData[] {
-  const rows = db.prepare(`SELECT * FROM posts WHERE category = 'projects'`).all();
-  return rows.map(rowToPost).map((post) => ({
+  const rows = getDb().prepare(`SELECT * FROM posts WHERE category = 'projects'`).all() as any[];
+  return rows.map(rowToPost).map((post: BlogPost) => ({
     title: post.projectTitle ?? post.title,
     description: post.projectDescription ?? post.excerpt,
     image: post.projectImage ?? post.image ?? '',
@@ -66,7 +66,7 @@ export function getFeaturedProjects(): ProjectData[] {
 // --- write operations, for live create/edit/delete ---
 
 export function createPost(post: Omit<BlogPost, never>): void {
-  db.prepare(`
+  getDb().prepare(`
     INSERT INTO posts (slug, category, title, date, tags, excerpt, content, image, project_title, project_description, project_image, external_url)
     VALUES (@slug, @category, @title, @date, @tags, @excerpt, @content, @image, @projectTitle, @projectDescription, @projectImage, @externalUrl)
   `).run({
@@ -85,7 +85,7 @@ export function updatePost(slug: string, updates: Partial<BlogPost>): void {
   if (!existing) throw new Error(`Post not found: ${slug}`);
   const merged = { ...existing, ...updates };
 
-  db.prepare(`
+  getDb().prepare(`
     UPDATE posts SET
       category = @category,
       title = @title,
@@ -112,5 +112,5 @@ export function updatePost(slug: string, updates: Partial<BlogPost>): void {
 }
 
 export function deletePost(slug: string): void {
-  db.prepare('DELETE FROM posts WHERE slug = ?').run(slug);
+  getDb().prepare('DELETE FROM posts WHERE slug = ?').run(slug);
 }

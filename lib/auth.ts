@@ -1,9 +1,9 @@
-import { db } from './db';
+import { getDb } from './db';
 import bcrypt from 'bcryptjs';
 import { verifySessionToken } from './session';
 
 export function verifyLogin(username: string, password: string): boolean {
-  const row = db.prepare('SELECT password_hash FROM users WHERE username = ?').get(username) as
+  const row = getDb().prepare('SELECT password_hash FROM users WHERE username = ?').get(username) as
     | { password_hash: string }
     | undefined;
   if (!row) return false;
