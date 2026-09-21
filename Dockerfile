@@ -23,16 +23,17 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4200
 
+# libstdc++ is needed at runtime by native addons (like better-sqlite3)
+# that were compiled with g++ in the deps stage — the build tools
+# themselves aren't needed here, just this one shared runtime library
+RUN apk add --no-cache libstdc++
+
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-
-# Next's file tracer often fails to correctly copy native (.node) binaries
-# for packages like better-sqlite3 into the standalone output — explicitly
-# overwrite it with the real, fully-compiled package from the deps stage.
 COPY --from=deps /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 
 RUN mkdir -p /app/data && chown -R nextjs:nodejs /app/data
