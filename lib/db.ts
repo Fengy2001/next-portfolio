@@ -1,13 +1,18 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
+import fs from 'fs';
 
-const DB_PATH = path.join(process.cwd(), 'data', 'blog.db');
+const DATA_DIR = path.join(process.cwd(), 'data');
+const DB_PATH = path.join(DATA_DIR, 'blog.db');
 
-const globalForDb = globalThis as unknown as { db?: Database.Database };
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
+const globalForDb = globalThis as unknown as { db?: DatabaseSync };
 let initialized = false;
 
-function initSchema(database: Database.Database) {
+function initSchema(database: DatabaseSync) {
   database.exec(`
     CREATE TABLE IF NOT EXISTS posts (
       slug TEXT PRIMARY KEY,
@@ -37,12 +42,9 @@ function initSchema(database: Database.Database) {
   `);
 }
 
-// lazily create the connection on first actual use, not on import —
-// prevents native module side effects from running during `next build`'s
-// static analysis / page-data-collection phase
-export function getDb(): Database.Database {
+export function getDb(): DatabaseSync {
   if (!globalForDb.db) {
-    globalForDb.db = new Database(DB_PATH);
+    globalForDb.db = new DatabaseSync(DB_PATH);
   }
   if (!initialized) {
     initSchema(globalForDb.db);

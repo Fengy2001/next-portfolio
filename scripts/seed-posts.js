@@ -1,12 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const matter = require('gray-matter');
-const Database = require('better-sqlite3');
+const { DatabaseSync } = require('node:sqlite');
 
 const POSTS_DIR = path.join(__dirname, '..', 'content', 'blog-posts');
 const DB_PATH = path.join(__dirname, '..', 'data', 'blog.db');
 
-const db = new Database(DB_PATH);
+const db = new DatabaseSync(DB_PATH);
 
 // make sure the table exists, in case this runs before the app ever has
 db.exec(`
